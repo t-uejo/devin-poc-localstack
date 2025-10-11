@@ -1,3 +1,22 @@
+# AGENTS.md
+
+`AGENTS.md` は、プロジェクトに関わる AI エージェント（例：Devin や Cursor など）の**設定手順や開発ルールをまとめたドキュメント**です。
+
+開発環境のセットアップ方法、利用するコマンド、コード規約、推奨ワークフローなどを記載し、AI エージェントとチーム全体で統一した運用を行うために用います。
+
+## Project Structure
+
+```
+devin-poc-localstack/
+├── .gitignore
+├── .terraform.lock.hcl          //Terraformの依存関係ロックファイル
+├── AGENTS.md
+├── README.md
+├── docker-compose.yml           //LocalStackコンテナの設定
+├── docs/                        //ドキュメントディレクトリ
+└── provider.tf                  //AWSプロバイダーの設定
+```
+
 ## Terraform Test
 
 ### 1. Run Local Stack Container
