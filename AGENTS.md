@@ -1,154 +1,149 @@
-# AGENTS.md
+# AGENTS.md (Repository Root)
 
-`AGENTS.md` は、プロジェクトに関わる AI エージェント（例：Devin や Cursor など）の**設定手順や開発ルールをまとめたドキュメント**です。
+## Purpose
 
-開発環境のセットアップ方法、利用するコマンド、コード規約、推奨ワークフローなどを記載し、AI エージェントとチーム全体で統一した運用を行うために用います。
+リポジトリ全体の運用規約・共通ルールを定義する。Devin 等のエージェントは、本ドキュメントを最優先の共通原則として参照すること。
 
-## プロジェクト構造
+サブプロジェクト固有の詳細は、各フォルダ直下の `AGENTS.md` を優先すること。競合時はサブプロジェクトのルールを優先すること。
+
+## Repository Layout
+
+以下に示すように本リポジトリはモノレポ構成である。
 
 ```
 devin-poc-localstack/
-├── .gitignore
-├── .terraform.lock.hcl          //Terraformの依存関係ロックファイル
-├── AGENTS.md
-├── README.md
-├── docker-compose.yml           //LocalStackコンテナの設定
-├── docs/                        //ドキュメントディレクトリ
-└── provider.tf                  //AWSプロバイダーの設定
+├── README.md                    # リポジトリ全体説明
+├── AGENTS.md                    # AIエージェント用リポジトリ全体運用規約・共通ルール
+└── localstack-terraform-test/   # サブプロジェクトのルート
+    ├── README.md                # プロジェクト説明
+    ├── AGENTS.md                # サブプロジェクト固有のルール・運用規約
+    ├── docker-compose.yml       # LocalStack コンテナ定義
+    ├── docs/                    # 設計書ファイルを格納
+    └── terraform/               # Terraform 設定ファイル
+        └── provider.tf          # プロバイダー設定
 ```
 
-## ファイル命名規則
+## Prerequisites
 
-### Terraform ファイル
+- Terraform v1.6+（tfenv 推奨、`terraform test` コマンド対応）
+- `terraform-docs` 最新安定版
+- `tflint` 最新安定版（Terraform 静的解析）
+- `checkov` 最新安定版（セキュリティ・コンプライアンススキャン）
+- Python 3.11+
+- Docker
+- LocalStack
+- （必要に応じて）tflocal, awscli-local
 
-Terraform プロジェクトでは、機能別にファイルを分割することで保守性と可読性を向上させます。以下の命名規則に従ってファイルを整理してください。
+## Setup
 
-#### 基本ファイル構成
+以下は Devin 仮想マシンを想定した手順である。Devin 仮想マシンには `Docker` や `pip` は既にインストール済みである。
 
-| ファイル名     | 用途               | 説明                                                 |
-| -------------- | ------------------ | ---------------------------------------------------- |
-| `main.tf`      | メインリソース定義 | 主要な AWS リソース（S3、Lambda、DynamoDB 等）の定義 |
-| `variables.tf` | 変数定義           | 入力変数の宣言とデフォルト値の設定                   |
-| `outputs.tf`   | 出力値定義         | 他のモジュールやルートモジュールで参照する値の定義   |
-| `provider.tf`  | プロバイダー設定   | AWS プロバイダーの設定と認証情報                     |
-| `versions.tf`  | バージョン制約     | Terraform とプロバイダーのバージョン制約             |
+### Linux (Ubuntu/Debian)
 
-## Terraform Test
+```bash
+# Terraform
+git clone --depth=1 https://github.com/tfutils/tfenv.git ~/.tfenv
+echo 'export PATH="$HOME/.tfenv/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+tfenv install
+tfenv use
 
-### 1. LocalStack コンテナの実行
+# terraform-docs
+wget https://github.com/terraform-docs/terraform-docs/releases/latest/download/terraform-docs-linux-amd64.tar.gz
+tar -xzf terraform-docs-linux-amd64.tar.gz
+sudo mv terraform-docs /usr/local/bin/
+rm terraform-docs-linux-amd64.tar.gz
 
-クローンしたリポジトリで、bash シェルで以下のコマンドを入力して、LocalStack Docker をデタッチモードで実行開始します。
+# tflint
+curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
 
-```shell
+# checkov
+sudo apt update
+sudo apt install -y python3-pip
+pip install checkov
+```
+
+## Commands (common)
+
+### LocalStack
+
+```bash
+# LocalStack コンテナの実行
 docker compose up -d
+
+# リソースのクリーンアップ
+docker compose down
 ```
 
-LocalStack コンテナが起動して実行されるまで待機します。
+### Terraform
 
-### 2. Terraform の初期化
-
-クローンしたリポジトリから以下のコマンドを入力して Terraform を初期化します。
-
-```shell
+```bash
+# 初期化
 terraform init
-```
 
-### 3. Terraform テストの実行
+# 検証
+terraform fmt -check && terraform validate
 
-Terraform Test を実行するために以下のコマンドを入力します。
+# リソースのプラン
+terraform plan
 
-```shell
+# リソース作成
+terraform apply -auto-approve
+
+# テスト
 terraform test
 ```
 
-すべてのテストが正常に通過したことを確認します。
+### 静的解析
 
-出力は以下のようになります：
+```bash
+# tflint による静的解析
+tflint --init && tflint
 
-```shell
-tests/localstack.tftest.hcl... in progress
-  run "check_s3_bucket_name"... pass
-  run "check_lambda_function"... pass
-  run "check_name_of_filename_written_to_dynamodb"... pass
-tests/localstack.tftest.hcl... tearing down
-tests/localstack.tftest.hcl... pass
-
-Success! 3 passed, 0 failed.
+# checkov によるセキュリティスキャン
+checkov -d .
 ```
 
-### 4. リソースのクリーンアップ
+### terraform-docs
 
-LocalStack コンテナを破棄するために以下のコマンドを入力します。
-
-```shell
-docker compose down
+```bash
+# ドキュメント生成
+terraform-docs markdown . > README.md
 ```
 
-## AWS CLI でのデバッグ
+## Quality Gates
 
-### 1. LocalStack コンテナの実行
+- `terraform fmt` が差分ゼロであること
+- `tflint`/`checkov`/`terraform validate` がエラー無し
 
-クローンしたリポジトリで、bash シェルで以下のコマンドを入力して、LocalStack Docker をデタッチモードで実行開始します。
+## Conventions
 
-```shell
-docker compose up -d
-```
+### ファイル命名規則
 
-LocalStack コンテナが起動して実行されるまで待機します。
+| ファイル名            | 用途                                               |
+| --------------------- | -------------------------------------------------- |
+| `main.tf`             | メインリソース定義                                 |
+| `variables.tf`        | 入力変数の宣言とデフォルト値                       |
+| `outputs.tf`          | 出力値定義                                         |
+| `provider.tf`         | プロバイダー設定                                   |
+| `versions.tf`         | Terraform/プロバイダーのバージョン制約             |
+| `.terraform.lock.hcl` | 依存バージョンのロックファイル（**Git 管理必須**） |
 
-### 2. 認証
+### 命名規則
 
-AWS クラウドをエミュレートするローカル実行コンテナ内で AWS CLI コマンドを実行できるように、以下の環境変数をエクスポートします。
+<!-- TODO:モジュールなど命名規則を明確にする -->
 
-```shell
-export AWS_ACCESS_KEY_ID=test
-export AWS_SECRET_ACCESS_KEY=test
-export AWS_SESSION_TOKEN=test
-export AWS_REGION=ap-northeast-1
-```
+- リソース/モジュール: 接頭辞を統一（例: `proj-<sys>-<comp>`）
 
-### 3. ローカルでのリソース作成
+## Security
 
-ローカルで実行中のコンテナ内でリソースを作成します。
+- 認証情報はコミット禁止（`secrets/` は gitignore）
+- IRSA / OIDC 等のベストプラクティスを優先
 
-```shell
-terraform init
-terraform plan
-terraform apply -auto-approve
-```
+## For Agents (Devin 等)
 
-### 4. デプロイされたリソースでの AWS CLI コマンド実行
-
-以下のコマンドでデバッグを行い、設計書の仕様を満たせているか確認してください。
-
-#### 4-1. S3 へファイルをアップロード
-
-`README.md`ファイルを`test-file.txt`として`3://my-test-bucket`へアップロード。
-
-```
-aws --endpoint-url=http://localhost:4566 s3 cp README.md s3://my-test-bucket/test-file.txt
-```
-
-#### 4-2. ステートマシンが作成されたことを確認
-
-```shell
-aws --endpoint-url http://localhost:4566 stepfunctions list-state-machines
-```
-
-#### 4-3. dynamodb にファイルが書き込まれた確認
-
-```
-aws --endpoint-url=http://localhost:4566 dynamodb scan --table-name Files
-```
-
-### 5. リソースの破棄
-
-```shell
-terraform destroy -auto-approve
-```
-
-LocalStack コンテナを破棄するために以下のコマンドを入力します。
-
-```shell
-docker compose down
-```
+- 変更提案は PR として明確な差分を提示
+- 大量コード生成よりも最小差分・明確な根拠を重視
+- 各サブプロジェクトのコンテキスト（目的・制約）を理解してから実装
+- ドキュメント（README.md / docs）は変更と同時に更新
+- Quality Gates をすべてクリアしてからコミット提案
