@@ -98,7 +98,7 @@ terraform test
 tflint --init && tflint
 
 # checkov によるセキュリティスキャン
-checkov -d .
+checkov -d . --quiet
 ```
 
 ### terraform-docs
