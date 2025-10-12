@@ -17,6 +17,14 @@ devin-poc-localstack/
 └── provider.tf                  //AWSプロバイダーの設定
 ```
 
+### Terraform File Naming Conventions
+
+- main.tf - メインのリソース定義
+- vars.tf - 変数定義
+- outputs.tf - 出力値定義
+- provider.tf - プロバイダー設定
+- versions.tf - バージョン制約
+
 ## Terraform Test
 
 ### 1. Run Local Stack Container
