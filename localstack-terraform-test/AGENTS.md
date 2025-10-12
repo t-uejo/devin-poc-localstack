@@ -36,14 +36,29 @@ Success! 3 passed, 0 failed.
 
 ### LocalStack 認証設定
 
-AWS クラウドをエミュレートするローカル実行コンテナ内で AWS CLI コマンドを実行できるように、以下の環境変数をエクスポートします。
+AWS クラウドをエミュレートするローカル実行コンテナ内で AWS CLI コマンドを実行できるように、以下の環境変数を設定する。
 
-```shell
-export AWS_ACCESS_KEY_ID=test
-export AWS_SECRET_ACCESS_KEY=test
-export AWS_SESSION_TOKEN=test
-export AWS_REGION=ap-northeast-1
-```
+ここでは direnv を使用し、プロジェクトディレクトリに入ると自動的に環境変数が設定されるようにする。
+
+1. `.envrc` ファイルを作成
+
+   ```shell
+   cat > .envrc << 'EOF'
+   export AWS_ACCESS_KEY_ID=test
+   export AWS_SECRET_ACCESS_KEY=test
+   export AWS_SESSION_TOKEN=test
+   export AWS_REGION=ap-northeast-1
+   export AWS_ENDPOINT_URL=http://localhost:4566
+   EOF
+   ```
+
+2. direnv を許可
+
+   ```shell
+   direnv allow
+   ```
+
+これ以降、このディレクトリに入ると自動的に LocalStack 用の環境変数が設定される。ディレクトリから出ると環境変数は自動的にアンロードされる。
 
 ### 検証用コマンド
 
