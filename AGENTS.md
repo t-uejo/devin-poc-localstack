@@ -49,17 +49,14 @@ tfenv install
 tfenv use
 
 # terraform-docs
-wget https://github.com/terraform-docs/terraform-docs/releases/latest/download/terraform-docs-linux-amd64.tar.gz
-tar -xzf terraform-docs-linux-amd64.tar.gz
-sudo mv terraform-docs /usr/local/bin/
-rm terraform-docs-linux-amd64.tar.gz
+curl -sSLo terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/download/v0.19.0/terraform-docs-v0.19.0-linux-amd64.tar.gz
+
+tar -xzf terraform-docs.tar.gz && sudo mv terraform-docs /usr/local/bin/ && rm terraform-docs.tar.gz
 
 # tflint
 curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
 
 # checkov
-sudo apt update
-sudo apt install -y python3-pip
 pip install checkov
 ```
 
